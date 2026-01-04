@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Discovery Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .app-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            min-height: 80vh;
+        }
+
+        .header-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            min-height: 300px;
+        }
+
+        .main-button {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+            z-index: 10;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .main-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .main-button:active {
+            transform: translateY(0);
+        }
+
+        .main-button.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .location-display {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            color: #666;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .location-display.show {
+            opacity: 1;
+        }
+
+        .results-section {
+            padding: 0 30px 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .results-section.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4CAF50;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .category-title {
+            color: #4CAF50;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .items-list {
+            list-style: none;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .item-distance {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .weather-info {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .weather-temp {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .weather-desc {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .reset-section {
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            border-top: 1px solid #eee;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .reset-section.show {
+            opacity: 1;
+        }
+
+        .reset-button {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .loading-spinner {
+            width: 35px;
+            height: 35px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                margin: 10px;
+                min-height: 70vh;
+            }
+
+            .header-section {
+                padding: 40px 15px;
+                min-height: 250px;
+            }
+
+            .main-button {
+                width: 120px;
+                height: 120px;
+                font-size: 16px;
+            }
+
+            .results-section {
+                padding: 0 20px 20px;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .category-card {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-button {
+                width: 100px;
+                height: 100px;
+                font-size: 14px;
+            }
+
+            .weather-temp {
+                font-size: 28px;
+            }
+
+            .category-card {
+                padding: 12px;
+            }
+
+            .item {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header-section">
+            <button class="main-button" id="mainButton">
+                <span id="buttonText">Discover Nearby</span>
+                <div class="loading-spinner" id="loadingSpinner" style="display: none;"></div>
+            </button>
+            <div class="location-display" id="locationDisplay"></div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="weather-info" id="weatherInfo">
+                <div class="weather-temp" id="weatherTemp">--°C</div>
+                <div class="weather-desc" id="weatherDesc">Loading weather...</div>
+            </div>
+
+            <div class="results-grid" id="resultsGrid">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+
+        <div class="reset-section" id="resetSection">
+            <button class="reset-button" id="resetButton">🔄 Reset & Search Again</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        class LocalDiscoveryApp {
+            constructor() {
+                this.button = document.getElementById('mainButton');
+                this.buttonText = document.getElementById('buttonText');
+                this.loadingSpinner = document.getElementById('loadingSpinner');
+                this.locationDisplay = document.getElementById('locationDisplay');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.resultsGrid = document.getElementById('resultsGrid');
+                this.resetSection = document.getElementById('resetSection');
+                this.resetButton = document.getElementById('resetButton');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.weatherInfo = document.getElementById('weatherInfo');
+                this.weatherTemp = document.getElementById('weatherTemp');
+                this.weatherDesc = document.getElementById('weatherDesc');
+
+                this.categories = [
+                    { id: 'restaurants', icon: '🍽️', title: 'Restaurants' },
+                    { id: 'cafes', icon: '☕', title: 'Cafes & Coffee' },
+                    { id: 'shopping', icon: '🛍️', title: 'Shopping' },
+                    { id: 'gas', icon: '⛽', title: 'Gas Stations' },
+                    { id: 'entertainment', icon: '🎬', title: 'Entertainment' },
+                    { id: 'services', icon: '🏢', title: 'Services' }
+                ];
+
+                this.init();
+            }
+
+            init() {
+                this.button.addEventListener('click', () => this.handleButtonClick());
+                this.resetButton.addEventListener('click', () => this.resetApp());
+            }
+
+            async handleButtonClick() {
+                if (this.button.classList.contains('loading')) return;
+
+                this.showLoading();
+                this.hideError();
+                this.hideResults();
+
+                try {
+                    const location = await this.getCurrentLocation();
+                    const locationName = await this.getLocationName(location.lat, location.lng);
+                    
+                    this.showLocation(locationName);
+                    
+                    // Fetch weather and nearby places
+                    const [weatherData, nearbyPlaces] = await Promise.all([
+                        this.getCurrentWeather(location.lat, location.lng),
+                        this.findNearbyPlaces(location.lat, location.lng)
+                    ]);
+
+                    this.displayWeather(weatherData);
+                    this.displayNearbyPlaces(nearbyPlaces);
+                    this.showResults();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showError(error.message);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            getCurrentLocation() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Geolocation is not supported by this browser'));
+                        return;
+                    }
+
+                    // First try with high accuracy
+                    const options1 = {
+                        enableHighAccuracy: true,
+                        timeout: 8000,
+                        maximumAge: 60000
+                    };
+
+                    // Fallback options with lower accuracy but faster
+                    const options2 = {
+                        enableHighAccuracy: false,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    };
+
+                    const tryGetLocation = (options, isFallback = false) => {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                resolve({
+                                    lat: position.coords.latitude,
+                                    lng: position.coords.longitude,
+                                    accuracy: position.coords.accuracy
+                                });
+                            },
+                            (error) => {
+                                if (!isFallback && error.code === error.TIMEOUT) {
+                                    // Try again with less accurate but faster settings
+                                    tryGetLocation(options2, true);
+                                } else {
+                                    let message = 'Failed to get location: ';
+                                    switch(error.code) {
+                                        case error.PERMISSION_DENIED:
+                                            message += 'Please allow location access and try again.';
+                                            break;
+                                        case error.POSITION_UNAVAILABLE:
+                                            message += 'Location services unavailable. Please check your connection.';
+                                            break;
+                                        case error.TIMEOUT:
+                                            message += 'Location request took too long. Please try again.';
+                                            break;
+                                        default:
+                                            message += 'Please check your location settings and try again.';
+                                    }
+                                    reject(new Error(message));
+                                }
+                            },
+                            options
+                        );
+                    };
+
+                    // Start with high accuracy attempt
+                    tryGetLocation(options1);
+                });
+            }
+
+            async getLocationName(lat, lng) {
+                try {
+                    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                    const data = await response.json();
+                    return data.city || data.locality || data.countryName || 'Current Location';
+                } catch (error) {
+                    return `Location (${lat.toFixed(2)}, ${lng.toFixed(2)})`;
+                }
+            }
+
+            async getCurrentWeather(lat, lng) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+                    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&temperature_unit=celsius`, {
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error('Weather service unavailable');
+                    }
+                    
+                    const data = await response.json();
+                    const current = data.current_weather;
+                    
+                    const weatherCodes = {
+                        0: 'Clear sky',
+                        1: 'Mainly clear',
+                        2: 'Partly cloudy',
+                        3: 'Overcast',
+                        45: 'Foggy',
+                        48: 'Depositing rime fog',
+                        51: 'Light drizzle',
+                        53: 'Moderate drizzle',
+                        55: 'Dense drizzle',
+                        61: 'Slight rain',
+                        63: 'Moderate rain',
+                        65: 'Heavy rain',
+                        80: 'Slight rain showers',
+                        81: 'Moderate rain showers',
+                        82: 'Violent rain showers'
+                    };
+                    
+                    return {
+                        temp: Math.round(current.temperature),
+                        condition: weatherCodes[current.weathercode] || 'Unknown conditions'
+                    };
+                } catch (error) {
+                    console.error('Weather fetch error:', error);
+                    // Fallback to simulated data if API fails
+                    return {
+                        temp: Math.floor(Math.random() * 20) + 15,
+                        condition: 'Weather data unavailable'
+                    };
+                }
+            }
+
+            async findNearbyPlaces(lat, lng) {
+                try {
+                    // Use Overpass API to find real nearby places
+                    const categories = [
+                        { key: 'restaurants', query: 'amenity~"restaurant|fast_food|cafe"' },
+                        { key: 'cafes', query: 'amenity~"cafe|coffee_shop"' },
+                        { key: 'shopping', query: 'shop~"supermarket|mall|department_store|convenience"' },
+                        { key: 'gas', query: 'amenity="fuel"' },
+                        { key: 'entertainment', query: 'amenity~"cinema|theatre|nightclub|bar"' },
+                        { key: 'services', query: 'amenity~"bank|post_office|pharmacy|hospital"' }
+                    ];
+
+                    const places = {};
+                    
+                    for (const category of categories) {
+                        try {
+                            const categoryPlaces = await this.fetchPlacesFromOverpass(lat, lng, category.query);
+                            places[category.key] = categoryPlaces.slice(0, 10); // Limit to 10 items
+                        } catch (error) {
+                            console.error(`Error fetching ${category.key}:`, error);
+                            places[category.key] = []; // Empty array if error
+                        }
+                    }
+
+                    return places;
+                } catch (error) {
+                    console.error('Error in findNearbyPlaces:', error);
+                    // Fallback to empty results if API fails
+                    return {
+                        restaurants: [],
+                        cafes: [],
+                        shopping: [],
+                        gas: [],
+                        entertainment: [],
+                        services: []
+                    };
+                }
+            }
+
+            async fetchPlacesFromOverpass(lat, lng, query) {
+                const radius = 2000; // 2km radius
+                const overpassQuery = `
+                    [out:json][timeout:8];
+                    (
+                        node[${query}](around:${radius},${lat},${lng});
+                        way[${query}](around:${radius},${lat},${lng});
+                    );
+                    out center meta;
+                `;
+
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                    const response = await fetch('https://overpass-api.de/api/interpreter', {
+                        method: 'POST',
+                        body: overpassQuery,
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        },
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`API response: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    return data.elements
+                        .filter(element => element.tags && element.tags.name)
+                        .map(element => {
+                            const elementLat = element.lat || element.center?.lat;
+                            const elementLng = element.lon || element.center?.lon;
+                            const distance = this.calculateDistance(lat, lng, elementLat, elementLng);
+                            
+                            return {
+                                name: element.tags.name,
+                                distance: distance.toFixed(1) + ' km',
+                                type: element.tags.amenity || element.tags.shop || 'Place'
+                            };
+                        })
+                        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        throw new Error('Search request timed out');
+                    }
+                    throw new Error('Unable to fetch nearby places');
+                }
+            }
+
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371; // Earth's radius in km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+
+
+
+            displayWeather(weatherData) {
+                this.weatherTemp.textContent = `${weatherData.temp}°C`;
+                this.weatherDesc.textContent = weatherData.condition;
+            }
+
+            displayNearbyPlaces(places) {
+                this.resultsGrid.innerHTML = '';
+                
+                this.categories.forEach(category => {
+                    const categoryPlaces = places[category.id] || [];
+                    if (categoryPlaces.length === 0) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+                    
+                    card.innerHTML = `
+                        <div class="category-header">
+                            <span class="category-icon">${category.icon}</span>
+                            <h3 class="category-title">${category.title} (${categoryPlaces.length})</h3>
+                        </div>
+                        <ul class="items-list">
+                            ${categoryPlaces.map(place => `
+                                <li class="item">
+                                    <span class="item-name">${place.name}</span>
+                                    <span class="item-distance">${place.distance}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `;
+                    
+                    this.resultsGrid.appendChild(card);
+                });
+
+                // Show message if no places found
+                if (this.resultsGrid.children.length === 0) {
+                    this.resultsGrid.innerHTML = `
+                        <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                            <h3 style="color: #666; margin-bottom: 10px;">No nearby places found</h3>
+                            <p style="color: #888;">Try moving to a different location or check your internet connection.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            showLoading() {
+                this.button.classList.add('loading');
+                this.buttonText.style.display = 'none';
+                this.loadingSpinner.style.display = 'block';
+            }
+
+            hideLoading() {
+                this.button.classList.remove('loading');
+                this.buttonText.style.display = 'block';
+                this.loadingSpinner.style.display = 'none';
+            }
+
+            showLocation(locationName) {
+                this.locationDisplay.textContent = `📍 ${locationName}`;
+                this.locationDisplay.classList.add('show');
+            }
+
+            showResults() {
+                setTimeout(() => {
+                    this.resultsSection.classList.add('show');
+                    this.resetSection.classList.add('show');
+                }, 500);
+            }
+
+            hideResults() {
+                this.resultsSection.classList.remove('show');
+                this.resetSection.classList.remove('show');
+                this.locationDisplay.classList.remove('show');
+            }
+
+            resetApp() {
+                this.hideResults();
+                this.resultsGrid.innerHTML = '';
+                this.weatherTemp.textContent = '--°C';
+                this.weatherDesc.textContent = 'Loading weather...';
+                this.locationDisplay.textContent = '';
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.classList.add('show');
+                setTimeout(() => this.hideError(), 6000);
+            }
+
+            hideError() {
+                this.errorMessage.classList.remove('show');
+            }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            new LocalDiscoveryApp();
+        });
+    </script>
+</body>
+</html>
